@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trust the Process — Habit Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F7F1E6;
+    --cream-2:#EFE6D4;
+    --ink:#221F1B;
+    --ink-soft:#5B564C;
+    --line:#DED2B8;
+    --plum:#5B1F44;
+    --plum-2:#7A2C5C;
+    --green:#2F5D3A;
+    --pink-card:#F7DCE6;
+    --pink-card-deep:#C65C86;
+    --w1:#5E8FC0; --w1-soft:#DCE7F4;
+    --w2:#C65C86; --w2-soft:#F6E0E8;
+    --w3:#3FA790; --w3-soft:#DDF0EA;
+    --w4:#D69A32; --w4-soft:#F6E9CE;
+    --w5:#8B6FB0; --w5-soft:#EBE2F5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Inter',sans-serif;padding:26px 22px 70px;}
+  .page{max-width:1400px;margin:0 auto;}
+
+  .masthead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+  .masthead h1{font-family:'Playfair Display',serif;font-weight:700;font-size:38px;margin:0;letter-spacing:-.01em;}
+  .masthead .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--plum);text-transform:uppercase;display:block;margin-bottom:2px;}
+  .accent-bar{height:8px;width:120px;background:var(--w4);border-radius:4px;margin:6px 0 20px;}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+  .toolbar input[type=text]{font-family:'Playfair Display',serif;font-style:italic;font-size:15px;border:none;background:transparent;border-bottom:1px solid var(--line);padding:4px 2px;width:110px;}
+  .toolbar input[type=number]{width:58px;font-family:'JetBrains Mono',monospace;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 6px;}
+  .toolbar select{font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 8px;color:var(--ink);max-width:200px;}
+  .btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;border:none;border-radius:999px;padding:8px 15px;cursor:pointer;background:var(--plum);color:#fff;letter-spacing:.02em;transition:transform .12s ease, background .15s ease;}
+  .btn:hover{background:var(--plum-2);transform:translateY(-1px);}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .btn.ghost:hover{background:var(--cream-2);}
+
+  /* ---------------- Dashboard grid ---------------- */
+  .dashboard{
+    display:grid;
+    background:var(--line);
+    gap:1px;
+    border-radius:14px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    margin-bottom:14px;
+  }
+  .cell{background:#fff;padding:8px;overflow:hidden;position:relative;}
+  .cell.name-col{position:sticky;left:0;z-index:3;padding:6px 10px;display:flex;align-items:center;gap:6px;}
+  .cell.day-col{padding:2px;}
+  .cell.week-start{box-shadow:inset 3px 0 0 var(--wk-color, transparent);}
+  .cell.today-col{outline:2px solid var(--plum); outline-offset:-2px; z-index:1;}
+  .today-tag{position:absolute; top:1px; left:50%; transform:translateX(-50%); font-size:6.5px; font-weight:800; letter-spacing:.06em; color:var(--plum); font-family:'JetBrains Mono',monospace;}
+
+  /* quote card */
+  .quote-card{background:linear-gradient(180deg,#fff,var(--cream-2));display:flex;flex-direction:column;justify-content:flex-start;gap:8px;}
+  .quote-card .quote{font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:var(--green);margin:0;line-height:1.15;}
+  .quote-card textarea{border:none;background:transparent;resize:none;font-family:'Playfair Display',serif;font-style:italic;font-size:12.5px;color:var(--ink-soft);width:100%;padding:0;line-height:1.45;flex:1;cursor:default;caret-color:transparent;}
+
+  /* profile photo */
+  .photo-avatar{width:60px;height:60px;border-radius:50%;background-color:#fff;background-size:cover;background-position:center;border:2px solid var(--plum);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;flex:0 0 auto;transition:transform .12s ease;}
+  .photo-avatar:hover{transform:scale(1.04);}
+  .photo-avatar .photo-plus{font-size:24px;line-height:1;color:var(--plum);font-weight:700;font-family:'Inter',sans-serif;}
+  .photo-remove{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--plum);color:#fff;border:2px solid var(--cream);font-size:10px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;}
+  .photo-remove:hover{background:var(--plum-2);}
+
+  /* trend chart */
+  .trend-cell svg{width:100%;height:100%;display:block;}
+
+  /* week bars row */
+  .weekbars-cell{padding:0;display:flex;background:#fff;}
+  .week-segment{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 4px;border-right:1px solid var(--line);gap:4px;}
+  .week-segment:last-child{border-right:none;}
+  .week-segment .wk-label{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink-soft);letter-spacing:.05em;text-transform:uppercase;}
+  .week-bars{display:flex;align-items:flex-end;gap:2px;height:56px;width:100%;justify-content:center;}
+  .week-bars .bcol{flex:1;max-width:16px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .week-bars .bar{width:100%;border-radius:3px 3px 2px 2px;min-height:2px;}
+  .week-bars .bpct{font-size:7px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  .week-donut{width:46px;height:46px;position:relative;margin-top:2px;}
+  .week-donut span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9.5px;}
+
+  /* side top: daily progress + top10 */
+  .side-top-cell{display:flex;flex-direction:column;gap:8px;padding:8px;}
+  .progress-box{background:var(--pink-card);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+  .progress-box .txt .pct{font-family:'Playfair Display',serif;font-weight:700;font-size:20px;}
+  .progress-box .txt .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#7a4a5c;font-weight:700;}
+  .progress-box .donut{width:52px;height:52px;position:relative;flex:0 0 auto;}
+  .progress-box .donut span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px;color:#7a2c5c;}
+  .top10 table{width:100%;border-collapse:collapse;font-size:10.5px;}
+  .top10 th{text-align:left;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--line);padding-bottom:4px;font-weight:700;}
+  .top10 td{padding:3px 0;border-bottom:1px dashed var(--line);}
+  .top10 .rank{color:var(--plum);font-weight:700;width:14px;}
+  .top10 .pct{font-family:'JetBrains Mono',monospace;font-weight:600;text-align:right;}
+
+  /* day header row */
+  .dayhead-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;padding:2px 0;}
+  .dayhead-cell .dow{font-size:9px;color:var(--ink-soft);font-weight:700;}
+  .dayhead-cell .num{font-size:11px;font-weight:700;}
+  .habits-hdr{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;display:flex;align-items:center;}
+
+  /* habit rows */
+  .name-cell input{border:none;background:transparent;font-size:12.5px;font-weight:600;color:var(--ink);width:100%;font-family:'Inter',sans-serif;}
+  .name-cell button{border:none;background:none;color:#c0392b;cursor:pointer;font-size:12px;opacity:.4;flex:0 0 auto;}
+  .name-cell button:hover{opacity:1;}
+  .chk-cell{display:flex;align-items:center;justify-content:center;}
+  .chk{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--line);cursor:pointer;appearance:none;-webkit-appearance:none;display:inline-block;position:relative;background:#fff;}
+  .chk::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;opacity:0;}
+  .chk:checked::after{opacity:1;}
+
+  /* weekly progress side */
+  .wp-cell{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:4px 10px;}
+  .wp-cell .wp-top{display:flex;justify-content:space-between;font-size:9.5px;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+  .wp-bar-track{background:var(--cream-2);border-radius:999px;height:6px;width:100%;overflow:hidden;}
+  .wp-bar-fill{height:100%;border-radius:999px;}
+
+  .add-habit-row{display:flex;gap:8px;margin:10px 0 26px;}
+  .add-habit-row input{flex:1;max-width:260px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;font-family:'Inter',sans-serif;}
+
+  .sheet-tabs{display:flex;gap:2px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;}
+  .sheet-tab{font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:6px 12px;border-radius:6px 6px 0 0;color:#fff;font-weight:600;letter-spacing:.02em;}
+
+  footer{text-align:center;color:var(--ink-soft);font-size:11px;margin-top:18px;font-family:'JetBrains Mono',monospace;letter-spacing:.03em;}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:50;}
+  .toast.show{opacity:1;}
+
+  @media(max-width:900px){
+    .dashboard{overflow-x:auto;}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <div>
+      <span class="eyebrow">Habit Tracker</span>
+      <h1 id="monthTitle">January 2026</h1>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+
+  <div class="toolbar">
+    <button class="btn ghost" id="prevMonthBtn" title="Previous month">←</button>
+    <select id="historySelect" title="Jump to a saved month"></select>
+    <button class="btn ghost" id="nextMonthBtn" title="Next month">→</button>
+    <input id="monthName" type="text" value="January" title="Month name">
+    <input id="yearNum" type="number" value="2026" title="Year">
+    <input id="startDayNum" type="number" min="1" max="31" value="1" title="Start tracking from which calendar day of the month">
+    <input id="daysNum" type="number" min="7" max="31" value="31" title="Days in month">
+    <button class="btn ghost" id="todayBtn">Jump to Today (IST)</button>
+    <button class="btn ghost" id="exportBtn">Export JSON</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+    <button class="btn ghost" id="importBtn">Import</button>
+    <button class="btn" id="resetBtn">Reset Month</button>
+  </div>
+
+  <div class="dashboard" id="dashboard"></div>
+
+  <div class="add-habit-row">
+    <input id="newHabitInput" type="text" placeholder="Add a new habit…">
+    <button class="btn" id="addHabitBtn">+ Add Habit</button>
+  </div>
+
+  <div class="sheet-tabs" id="sheetTabs"></div>
+  <footer>data is saved automatically on this device · export json to back up or move between devices</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WEEK_COLORS = [
+  {main:'#5E8FC0', soft:'#DCE7F4', name:'week 1'},
+  {main:'#C65C86', soft:'#F6E0E8', name:'week 2'},
+  {main:'#3FA790', soft:'#DDF0EA', name:'week 3'},
+  {main:'#D69A32', soft:'#F6E9CE', name:'week 4'},
+  {main:'#8B6FB0', soft:'#EBE2F5', name:'week 5'},
+];
+const DOW = ['T','F','S','S','M','T','W'];
+const STORAGE_KEY_V3 = 'trustTheProcessHabitData_v3';
+const STORAGE_KEY_V2 = 'trustTheProcessHabitData_v2'; // legacy, used for one-time migration
+const DEFAULT_HABITS = ['Read 1 Hour','Stop Doomscrolling','Workout','Eat Clean','Go Out in Nature','Wake Up Early','Drink 3L Water','Learn Spanish'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function getISTNow(){
+  // Resolve the current date in India Standard Time regardless of the device's own timezone.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone:'Asia/Kolkata', year:'numeric', month:'numeric', day:'numeric'
+  }).formatToParts(new Date());
+  const map = {};
+  parts.forEach(p=> map[p.type]=p.value);
+  return { year: parseInt(map.year), monthIndex: parseInt(map.month)-1, day: parseInt(map.day) };
+}
+function daysInMonth(monthIndex, year){
+  return new Date(year, monthIndex+1, 0).getDate();
+}
+function monthKey(monthName, year){
+  const idx = MONTH_NAMES.indexOf(monthName);
+  return `${year}-${String(idx+1).padStart(2,'0')}`;
+}
+function blankMonthData(monthName, year, seedHabitNames, startDay){
+  const totalDaysInMonth = daysInMonth(MONTH_NAMES.indexOf(monthName), year);
+  const sd = Math.min(Math.max(parseInt(startDay)||1, 1), totalDaysInMonth);
+  const days = totalDaysInMonth - sd + 1;
+  const names = (seedHabitNames && seedHabitNames.length) ? seedHabitNames : DEFAULT_HABITS;
+  return {
+    month: monthName, year, days, startDay: sd,
+    affirmation: "I am... focused, intentional, and ready for the month ahead.",
+    habits: names.map(name=>({name, checks:new Array(days).fill(false)}))
+  };
+}
+function freshAppState(){
+  const now = getISTNow();
+  const monthName = MONTH_NAMES[now.monthIndex];
+  const key = monthKey(monthName, now.year);
+  const months = {}; months[key] = blankMonthData(monthName, now.year, null, now.day);
+  return { months, activeKey:key };
+}
+function loadAppState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY_V3);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(parsed.months && parsed.activeKey && parsed.months[parsed.activeKey]) return parsed;
+    }
+  }catch(e){}
+  // one-time migration from the older single-month storage format
+  try{
+    const oldRaw = localStorage.getItem(STORAGE_KEY_V2);
+    if(oldRaw){
+      const old = JSON.parse(oldRaw);
+      if(old.habits){
+        const key = monthKey(old.month, old.year);
+        const months = {}; months[key] = old;
+        return { months, activeKey:key };
+      }
+    }
+  }catch(e){}
+  return freshAppState();
+}
+function saveAppState(){ localStorage.setItem(STORAGE_KEY_V3, JSON.stringify(appState)); }
+function ensureMonth(monthName, year){
+  const key = monthKey(monthName, year);
+  if(!appState.months[key]){
+    const seedNames = (state && state.habits && state.habits.length) ? state.habits.map(h=>h.name) : null;
+    appState.months[key] = blankMonthData(monthName, year, seedNames);
+  }
+  return key;
+}
+function switchToMonth(monthName, year){
+  const key = ensureMonth(monthName, year);
+  appState.activeKey = key;
+  state = appState.months[key];
+  saveAppState();
+  render();
+}
+function shiftMonth(delta){
+  let idx = MONTH_NAMES.indexOf(state.month) + delta;
+  let year = parseInt(state.year);
+  while(idx < 0){ idx += 12; year -= 1; }
+  while(idx > 11){ idx -= 12; year += 1; }
+  switchToMonth(MONTH_NAMES[idx], year);
+}
+
+let appState = loadAppState();
+let state = appState.months[appState.activeKey];
+
+function saveState(){ saveAppState(); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function resizeChecksArray(newDays){
+  state.days = newDays;
+  state.habits.forEach(h=>{
+    while(h.checks.length < newDays) h.checks.push(false);
+    if(h.checks.length > newDays) h.checks.length = newDays;
+  });
+}
+function weeksForDays(totalDays){
+  const weeks = []; let d = 0;
+  while(d < totalDays){
+    const len = Math.min(7, totalDays - d);
+    weeks.push({start:d, len});
+    d += len;
+  }
+  return weeks;
+}
+function weekIndexForDay(dayIdx, weeks){
+  return weeks.findIndex(w=> dayIdx>=w.start && dayIdx<w.start+w.len);
+}
+function todayDayIndex(){
+  const now = getISTNow();
+  const monthMatches = MONTH_NAMES[now.monthIndex] === state.month && now.year === parseInt(state.year);
+  if(!monthMatches) return -1;
+  const idx = now.day - (state.startDay || 1);
+  if(idx < 0 || idx >= state.days) return -1;
+  return idx;
+}
+function dailyPct(dayIdx){
+  if(state.habits.length===0) return 0;
+  const done = state.habits.filter(h=>h.checks[dayIdx]).length;
+  return Math.round((done/state.habits.length)*1000)/10;
+}
+function habitPct(habit){
+  if(state.days===0) return 0;
+  const done = habit.checks.filter(Boolean).length;
+  return Math.round((done/state.days)*1000)/10;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function donutSVG(pct, color, size=52, stroke=7, trackColor='#EEE6D4'){
+  const r=(size-stroke)/2, c=2*Math.PI*r, offset=c*(1-pct/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${trackColor}" stroke-width="${stroke}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
+      stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+      transform="rotate(-90 ${size/2} ${size/2})"/>
+  </svg>`;
+}
+function handlePhotoFile(file){
+  if(!file || !file.type.startsWith('image/')){ showToast('Please choose an image file'); return; }
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxDim = 320;
+      let w = img.width, h = img.height;
+      if(w > h){ if(w > maxDim){ h = Math.round(h*maxDim/w); w = maxDim; } }
+      else { if(h > maxDim){ w = Math.round(w*maxDim/h); h = maxDim; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      appState.photo = canvas.toDataURL('image/jpeg', 0.85);
+      saveAppState(); render(); showToast('Photo updated');
+    };
+    img.onerror = ()=> showToast('Could not read that image');
+    img.src = ev.target.result;
+  };
+  reader.onerror = ()=> showToast('Could not read that image');
+  reader.readAsDataURL(file);
+}
+
+function renderHistorySelect(){
+  const sel = document.getElementById('historySelect');
+  const keys = Object.keys(appState.months).sort();
+  sel.innerHTML = keys.map(k=>{
+    const m = appState.months[k];
+    const total = m.habits.length * m.days;
+    const done = m.habits.reduce((s,h)=>s+h.checks.filter(Boolean).length,0);
+    const pct = total ? Math.round((done/total)*100) : 0;
+    return `<option value="${k}" ${k===appState.activeKey?'selected':''}>${m.month} ${m.year} · ${pct}%</option>`;
+  }).join('');
+}
+
+function render(){
+  if(!state.startDay) state.startDay = 1;
+  document.getElementById('monthName').value = state.month;
+  document.getElementById('yearNum').value = state.year;
+  document.getElementById('startDayNum').value = state.startDay;
+  renderHistorySelect();
+  document.getElementById('daysNum').value = state.days;
+  document.getElementById('monthTitle').textContent = `${state.month} ${state.year}`;
+
+  const weeks = weeksForDays(state.days);
+  const days = state.days;
+  const numHabits = state.habits.length;
+
+  const dash = document.getElementById('dashboard');
+  dash.style.gridTemplateColumns = `210px repeat(${days}, minmax(22px, 1fr)) 250px`;
+  dash.style.gridTemplateRows = `150px 200px 46px repeat(${numHabits}, 34px)`;
+
+  let html = '';
+
+  html += `<div class="cell name-col quote-card" style="grid-column:1/2; grid-row:1/3;">
+    <div id="photoAvatarBtn" class="photo-avatar" title="${appState.photo?'Change your photo':'Add your photo'}" style="${appState.photo?`background-image:url('${appState.photo}')`:''}">
+      ${appState.photo ? '<button type="button" id="photoRemoveBtn" class="photo-remove" title="Remove photo">&times;</button>' : '<span class="photo-plus">+</span>'}
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none">
+    <p class="quote">trust the process</p>
+    <textarea id="affirmation" readonly>${escapeHtml(state.affirmation)}</textarea>
+  </div>`;
+
+  html += `<div class="cell trend-cell" style="grid-column:2 / span ${days}; grid-row:1;"><svg id="trendSvg" viewBox="0 0 1000 130" preserveAspectRatio="none"></svg></div>`;
+
+  const totalPossible = numHabits*days;
+  const totalDone = state.habits.reduce((s,h)=>s+h.checks.filter(Boolean).length,0);
+  const overallPct = totalPossible ? Math.round((totalDone/totalPossible)*1000)/10 : 0;
+  const ranked = state.habits.map(h=>({name:h.name,pct:habitPct(h)})).sort((a,b)=>b.pct-a.pct).slice(0,10);
+  html += `<div class="cell side-top-cell" style="grid-column:${days+2}/${days+3}; grid-row:1/3;">
+    <div class="progress-box">
+      <div class="donut">${donutSVG(overallPct,'#C65C86',52,7,'#f3d9e2')}<span>${overallPct}%</span></div>
+      <div class="txt"><div class="pct">${totalDone}/${totalPossible}</div><div class="lbl">Daily Progress</div></div>
+    </div>
+    <div class="top10">
+      <table><thead><tr><th colspan="2">Top Habits</th><th style="text-align:right">%</th></tr></thead>
+      <tbody>${ranked.map((h,i)=>`<tr><td class="rank">${i+1}</td><td>${escapeHtml(h.name)}</td><td class="pct">${h.pct}%</td></tr>`).join('') || '<tr><td colspan="3">Add a habit</td></tr>'}</tbody></table>
+    </div>
+  </div>`;
+
+  let wbSegments = '';
+  weeks.forEach((wk, wi)=>{
+    const color = WEEK_COLORS[wi % WEEK_COLORS.length];
+    let bars = '';
+    for(let d=wk.start; d<wk.start+wk.len; d++){
+      const p = dailyPct(d);
+      bars += `<div class="bcol"><div class="bpct">${Math.round(p)}%</div><div class="bar" style="height:${Math.max(p,3)}%; background:${color.main};"></div></div>`;
+    }
+    const avg = wk.len ? Math.round((Array.from({length:wk.len},(_,i)=>dailyPct(wk.start+i)).reduce((a,b)=>a+b,0)/wk.len)*10)/10 : 0;
+    wbSegments += `<div class="week-segment" style="flex-grow:${wk.len};">
+      <div class="wk-label">${color.name}</div>
+      <div class="week-bars">${bars}</div>
+      <div class="week-donut">${donutSVG(avg,color.main,46,6)}<span>${avg}%</span></div>
+    </div>`;
+  });
+  html += `<div class="cell weekbars-cell" style="grid-column:2 / span ${days}; grid-row:2;">${wbSegments}</div>`;
+
+  const todayIdx = todayDayIndex();
+  html += `<div class="cell name-col habits-hdr" style="grid-column:1/2; grid-row:3;">Daily Habits</div>`;
+  for(let d=0; d<days; d++){
+    const wi = weekIndexForDay(d, weeks);
+    const color = WEEK_COLORS[wi % WEEK_COLORS.length];
+    const isWkStart = weeks[wi].start === d;
+    const isToday = d === todayIdx;
+    html += `<div class="cell dayhead-cell ${isWkStart?'week-start':''} ${isToday?'today-col':''}" style="grid-column:${d+2}/${d+3}; grid-row:3; --wk-color:${color.main}; background:${color.soft};">
+      <div class="dow">${DOW[d%7]}</div><div class="num">${d+(state.startDay||1)}</div>
+      ${isToday? '<div class="today-tag">TODAY</div>' : ''}
+    </div>`;
+  }
+  html += `<div class="cell" style="grid-column:${days+2}/${days+3}; grid-row:3;"></div>`;
+
+  state.habits.forEach((h, hi)=>{
+    const row = hi+4;
+    html += `<div class="cell name-col" style="grid-row:${row};">
+      <input type="text" value="${escapeHtml(h.name)}" onchange="renameHabit(${hi}, this.value)">
+      <button onclick="removeHabit(${hi})" title="Remove habit">✕</button>
+    </div>`;
+    for(let d=0; d<days; d++){
+      const wi = weekIndexForDay(d, weeks);
+      const color = WEEK_COLORS[wi % WEEK_COLORS.length];
+      const isWkStart = weeks[wi].start === d;
+      const checked = h.checks[d] ? 'checked' : '';
+      const isToday = d === todayIdx;
+      html += `<div class="cell day-col chk-cell ${isWkStart?'week-start':''} ${isToday?'today-col':''}" style="grid-column:${d+2}/${d+3}; grid-row:${row}; --wk-color:${color.main}; background:${isToday? color.soft+'55' : color.soft+'22'};">
+        <input type="checkbox" class="chk" ${checked} data-color="${color.main}" onchange="toggleCheck(${hi}, ${d}, this)">
+      </div>`;
+    }
+    const pct = habitPct(h);
+    const doneCount = h.checks.filter(Boolean).length;
+    html += `<div class="cell wp-cell" style="grid-row:${row};">
+      <div class="wp-top"><span>${escapeHtml(h.name)}</span><span>${doneCount}/${days}</span></div>
+      <div class="wp-bar-track"><div class="wp-bar-fill" style="width:${pct}%; background:${WEEK_COLORS[hi%WEEK_COLORS.length].main};"></div></div>
+    </div>`;
+  });
+
+  dash.innerHTML = html;
+
+  dash.querySelectorAll('.chk').forEach(el=>{
+    const c = el.dataset.color;
+    el.style.background = el.checked ? c : '#fff';
+    el.style.borderColor = el.checked ? c : '';
+  });
+
+  renderTrend();
+  renderTabs();
+}
+
+function renderTrend(){
+  const svg = document.getElementById('trendSvg');
+  const w=1000,h=130;
+  const days = state.days;
+  const pts = [];
+  for(let i=0;i<days;i++){
+    const x = (i/(days-1||1))*(w-14)+7;
+    const y = h-14-(dailyPct(i)/100)*(h-28);
+    pts.push([x,y]);
+  }
+  let area = `M ${pts[0][0]} ${h}`;
+  pts.forEach(p=> area += ` L ${p[0]} ${p[1]}`);
+  area += ` L ${pts[pts.length-1][0]} ${h} Z`;
+  let line = `M ${pts[0][0]} ${pts[0][1]}`;
+  pts.forEach(p=> line += ` L ${p[0]} ${p[1]}`);
+  svg.innerHTML = `<path d="${area}" fill="#DCE7F4" opacity="0.9"/><path d="${line}" fill="none" stroke="#5E8FC0" stroke-width="2.5"/>`;
+}
+
+function renderTabs(){
+  const weeks = weeksForDays(state.days);
+  const tabs = document.getElementById('sheetTabs');
+  let html = `<div class="sheet-tab" style="background:${WEEK_COLORS[0].main};">Daily Habits</div>`;
+  weeks.forEach((wk,i)=>{
+    const c = WEEK_COLORS[i%WEEK_COLORS.length];
+    html += `<div class="sheet-tab" style="background:${c.main};">${c.name}</div>`;
+  });
+  html += `<div class="sheet-tab" style="background:var(--plum);">Weekly Progress</div>`;
+  tabs.innerHTML = html;
+}
+
+function toggleCheck(hIdx, dIdx, el){
+  state.habits[hIdx].checks[dIdx] = el.checked;
+  saveState();
+  render();
+}
+function renameHabit(idx, value){
+  state.habits[idx].name = value.trim() || state.habits[idx].name;
+  saveState(); render();
+}
+function removeHabit(idx){
+  state.habits.splice(idx,1);
+  saveState(); render();
+}
+document.getElementById('addHabitBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('newHabitInput');
+  const name = input.value.trim();
+  if(!name) return;
+  state.habits.push({name, checks:new Array(state.days).fill(false)});
+  input.value=''; saveState(); render();
+});
+document.getElementById('newHabitInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('addHabitBtn').click();
+});
+document.getElementById('monthName').addEventListener('change', e=>{
+  const val = e.target.value.trim();
+  const match = MONTH_NAMES.find(m => m.toLowerCase() === val.toLowerCase());
+  if(!match){
+    showToast('Enter a full month name, e.g. August');
+    e.target.value = state.month;
+    return;
+  }
+  switchToMonth(match, parseInt(state.year));
+});
+document.getElementById('yearNum').addEventListener('change', e=>{
+  const y = parseInt(e.target.value);
+  if(isNaN(y)){ e.target.value = state.year; return; }
+  switchToMonth(state.month, y);
+});
+document.getElementById('daysNum').addEventListener('change', e=>{
+  const totalDaysInMonth = daysInMonth(MONTH_NAMES.indexOf(state.month), parseInt(state.year));
+  const maxDays = totalDaysInMonth - (state.startDay||1) + 1;
+  let n = parseInt(e.target.value);
+  if(isNaN(n)||n<7) n=7; if(n>maxDays) n=maxDays;
+  resizeChecksArray(n); saveState(); render();
+});
+document.getElementById('startDayNum').addEventListener('change', e=>{
+  const totalDaysInMonth = daysInMonth(MONTH_NAMES.indexOf(state.month), parseInt(state.year));
+  let sd = parseInt(e.target.value);
+  if(isNaN(sd)||sd<1) sd=1; if(sd>totalDaysInMonth) sd=totalDaysInMonth;
+  state.startDay = sd;
+  const maxDays = totalDaysInMonth - sd + 1;
+  if(state.days > maxDays){
+    resizeChecksArray(maxDays);
+    showToast(`Start day set to ${sd} — grid trimmed to fit the rest of the month`);
+  }
+  saveState(); render();
+});
+document.addEventListener('change', e=>{
+  if(e.target.id === 'affirmation'){ state.affirmation = e.target.value; saveState(); }
+  if(e.target.id === 'photoInput'){
+    const file = e.target.files[0];
+    if(file) handlePhotoFile(file);
+    e.target.value = '';
+  }
+});
+document.addEventListener('click', e=>{
+  const removeBtn = e.target.closest('#photoRemoveBtn');
+  if(removeBtn){
+    e.stopPropagation();
+    appState.photo = null; saveAppState(); render(); showToast('Photo removed');
+    return;
+  }
+  const avatarBtn = e.target.closest('#photoAvatarBtn');
+  if(avatarBtn){
+    document.getElementById('photoInput').click();
+  }
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset all checkmarks for this month? Habit names will be kept.')){
+    state.habits.forEach(h=> h.checks = new Array(state.days).fill(false));
+    saveState(); render(); showToast('Month reset');
+  }
+});
+document.getElementById('todayBtn').addEventListener('click', ()=>{
+  const now = getISTNow();
+  switchToMonth(MONTH_NAMES[now.monthIndex], now.year);
+  showToast(`Switched to ${state.month} ${state.year} (IST)`);
+});
+document.getElementById('prevMonthBtn').addEventListener('click', ()=> shiftMonth(-1));
+document.getElementById('nextMonthBtn').addEventListener('click', ()=> shiftMonth(1));
+document.getElementById('historySelect').addEventListener('change', e=>{
+  const key = e.target.value;
+  if(key && appState.months[key]){
+    appState.activeKey = key;
+    state = appState.months[key];
+    saveAppState();
+    render();
+  }
+});
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(appState,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download = `habit-tracker-history-${state.year}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Exported all months as JSON');
+});
+document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      if(parsed.months && parsed.activeKey && parsed.months[parsed.activeKey]){
+        appState = parsed;
+        state = appState.months[appState.activeKey];
+      } else if(parsed.habits){
+        // legacy single-month export — merge it in as its own month, keep existing history
+        const key = monthKey(parsed.month, parsed.year);
+        appState.months[key] = parsed;
+        appState.activeKey = key;
+        state = appState.months[key];
+      } else {
+        throw new Error('bad file');
+      }
+      saveAppState(); render(); showToast('Imported data');
+    }catch(err){ alert('Could not read that file — please check it is a valid export from this tracker.'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+});
+
+render();
+</script>
+</body>
+</html>
